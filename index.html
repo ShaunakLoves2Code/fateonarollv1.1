@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fate on a Roll - Dual Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.5s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Theme Variables */
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #2c3e50 0%, #1a1a1a 100%);
+            --container-bg: rgba(30, 30, 30, 0.95);
+            --text-color: #e0e0e0;
+            --text-light: #b0b0b0;
+            --primary-color: #ff2a2a;
+            --secondary-color: #8b0000;
+            --border-color: #ff2a2a;
+            --card-bg: #222;
+            --card-hover: #252525;
+            --button-gradient: linear-gradient(to right, #ff2a2a, #8b0000);
+            --button-hover: linear-gradient(to right, #ff4a4a, #a50000);
+            --shadow: rgba(0, 0, 0, 0.5);
+            --shadow-light: rgba(0, 0, 0, 0.4);
+        }
+
+        body.flirty-mode {
+            --bg-gradient: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #4a4a4a;
+            --text-light: #666;
+            --primary-color: #ff4081;
+            --secondary-color: #c2185b;
+            --border-color: #ff4081;
+            --card-bg: #fff;
+            --card-hover: #f8f8f8;
+            --button-gradient: linear-gradient(to right, #ff4081, #c2185b);
+            --button-hover: linear-gradient(to right, #ff6090, #d81b60);
+            --shadow: rgba(0, 0, 0, 0.2);
+            --shadow-light: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-color);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .theme-label {
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, #ff2a2a, #8b0000);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(to right, #ff4081, #c2185b);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        /* Landing Page Styles */
+        #landing-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            flex: 1;
+        }
+
+        .landing-container {
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow);
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+        }
+
+        .landing-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        .dark-mode .landing-title {
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .landing-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--text-light);
+        }
+
+        #name-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #name-input {
+            padding: 15px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50px;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        #name-input:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 10px var(--shadow-light);
+        }
+
+        #submit-btn {
+            background: var(--button-gradient);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px var(--shadow);
+            font-weight: bold;
+        }
+
+        #submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow);
+            background: var(--button-hover);
+        }
+
+        /* Main App Styles */
+        #main-app {
+            display: none;
+            flex: 1;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed var(--primary-color);
+        }
+
+        .user-greeting {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .dark-mode .user-greeting {
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .reset-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow);
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .dark-mode h1 {
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+
+        .dice-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dice {
+            margin: 0 auto 30px;
+            width: 150px;
+            height: 150px;
+            perspective: 1000px;
+        }
+
+        .dice.rolling svg {
+            animation: roll 1s ease-out;
+        }
+
+        @keyframes roll {
+            0% { transform: rotate(0deg) rotateX(0deg) rotateY(0deg); }
+            25% { transform: rotate(90deg) rotateX(90deg) rotateY(90deg); }
+            50% { transform: rotate(180deg) rotateX(180deg) rotateY(180deg); }
+            75% { transform: rotate(270deg) rotateX(270deg) rotateY(270deg); }
+            100% { transform: rotate(360deg) rotateX(360deg) rotateY(360deg); }
+        }
+
+        .roll-button {
+            background: var(--button-gradient);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px var(--shadow);
+            font-weight: bold;
+        }
+
+        .roll-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow);
+            background: var(--button-hover);
+        }
+
+        .roll-button:active {
+            transform: translateY(1px);
+        }
+
+        .roll-button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        .results-container {
+            text-align: center;
+        }
+
+        #result-title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+
+        .dark-mode #result-title {
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-light);
+            padding: 25px;
+            width: 300px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--shadow);
+            background: var(--card-hover);
+        }
+
+        .card-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            font-style: italic;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Animation Effects */
+        .dark-mode .blood {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.7;
+            z-index: 9999;
+            font-size: 24px;
+            animation: drip 1.5s forwards;
+        }
+
+        .flirty-mode .heart {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.7;
+            z-index: 9999;
+            font-size: 24px;
+            animation: float 3s forwards;
+        }
+
+        @keyframes drip {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Made with love footer */
+        .made-with-love {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .made-with-love a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .made-with-love a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .dice {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .card {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .cards-container {
+                gap: 15px;
+            }
+            
+            .landing-container {
+                padding: 20px;
+            }
+            
+            .landing-title {
+                font-size: 2rem;
+            }
+            
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <span class="theme-label">Dark</span>
+        <label class="switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+        </label>
+        <span class="theme-label">Flirty</span>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landing-page">
+        <div class="landing-container">
+            <h1 class="landing-title">Fate on a Roll</h1>
+            <p class="landing-subtitle">Enter your name to discover your fate</p>
+            <form id="name-form">
+                <input type="text" id="name-input" placeholder="Enter your name" required>
+                <button type="submit" id="submit-btn">Face Your Fate</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App (initially hidden) -->
+    <div id="main-app">
+        <div class="container">
+            <div class="user-header">
+                <div class="user-greeting" id="user-greeting">Hello, Player!</div>
+                <button class="reset-btn" id="reset-btn">Change Name</button>
+            </div>
+
+            <header>
+                <h1>Fate on a Roll</h1>
+                <p id="mode-subtitle">Roll the dice and discover how pathetic you really are</p>
+            </header>
+
+            <main>
+                <div class="dice-container">
+                    <div class="dice" id="dice">
+                        <svg id="dice-svg" width="150" height="150" viewBox="0 0 150 150">
+                            <rect width="150" height="150" fill="var(--card-bg)" rx="15" ry="15" stroke="var(--primary-color)" stroke-width="2"/>
+                            <!-- Dice dots will be drawn here by JavaScript -->
+                        </svg>
+                    </div>
+                    <button id="roll-button" class="roll-button">Roll the Dice</button>
+                </div>
+
+                <div class="results-container" id="results-container">
+                    <h2 id="result-title">Your Fate Awaits...</h2>
+                    <div class="cards-container" id="cards-container">
+                        <!-- Cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <p id="footer-text">Warning: This game is designed to be brutally honest. Proceed with thick skin.</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Made with love footer -->
+    <div class="made-with-love">
+        Made with ❤️ by shaunakluvs2code
+    </div>
+
+    <script>
+        // Database of brutal quotes for dark mode
+        const darkQuotes = [
+            "The only thing you're good at is disappointing people.",
+            "Your existence is proof that birth control fails.",
+            "If idiots could fly, you'd be a jet engine of stupidity.",
+            "You were probably born by C-section because even your mother didn't want you coming out of her.",
+            "The only reason anyone tolerates you is because they feel sorry for you.",
+            "You have the personality of a wet paper bag and half the usefulness.",
+            "Your future is as bright as a black hole.",
+            "You're the human equivalent of a participation trophy - worthless and unwanted.",
+            "If failure was a person, it would be wearing your face right now.",
+            "You're so useless even your reflection avoids eye contact.",
+            "Your birth certificate is an apology letter from the condom factory.",
+            "You're like a cloud - when you disappear, it's a beautiful day.",
+            "The only thing you're spreading is disappointment.",
+            "You're the reason they put instructions on shampoo bottles.",
+            "Your family tree must be a cactus because everyone on it is a prick.",
+            "You have two brain cells, and they're both fighting for third place.",
+            "You're about as useful as a screen door on a submarine.",
+            "I've seen people like you before, but I had to pay admission at the circus.",
+            "You're not stupid; you just have bad luck thinking.",
+            "You bring everyone so much joy... when you leave the room.",
+            "Your only chance of being on the cover of a magazine is if it's 'Missing Persons'.",
+            "You're like a software update - whenever I see you, I immediately think 'not now'.",
+            "You're the human equivalent of a typo.",
+            "You have the perfect face for radio and the perfect voice for mime.",
+            "You're not pretty enough to be this stupid.",
+            "You're so dense, light bends around you.",
+            "Your only purpose in life is to serve as a warning to others.",
+            "You're like a broken pencil - pointless.",
+            "You're the reason why aliens won't talk to us.",
+            "You're so ugly, when you were born, the doctor slapped your mother."
+        ];
+
+        // Database of flirty quotes for flirty mode
+        const flirtyQuotes = [
+            "I'd say god bless you ..but looks like he already did.",
+            "Do you have a map? I keep getting lost in your eyes.",
+            "Is your name Google? Because you have everything I've been searching for.",
+            "If you were a potato, you would be a sweet potato. (With strong Russian accent).",
+            "You seem like someone worth waking up with..",
+            "Do you believe in love at first sight, or should I walk by again?",
+            "Girl are u a magician? cause abrakadamnnnn.",
+            "Is there an airport nearby or is that just my heart taking off?",
+            "Do you have a sunburn, or are you always this hot?",
+            "Are you a time traveler? Because I see you in my future.",
+            "Is your dad a boxer? Because you're a knockout!",
+            "Do you like water? If so, you'll like 70% of me!.",
+            "Do you have a Band-Aid? I just scraped my knee falling for you.",
+            "Are you a parking ticket? Because you've got FINE written all over you.",
+            "Do you have a secret? Because you're driving me crazy trying to figure you out.",
+            "Do you like Star Wars? Because Yoda only one for me!",
+            "Do you have a library card? Because I want to borrow you and never return you.",
+            "If you were a fruit, you'd be a fine-apple.",
+            "I just wanted to say that you are the most attractive woman here.",
+            "Those are nice arms. Could I see how they would feel around me?",
+            "Is your dad an artist? Because you're a masterpiece.",
+            "Hey, How you doin'😏😏😏😏.",
+            "Hi, are you from Tennessee? Cuz you're the only ten I see!",
+            "I want to play a game of 'Simon Says'... but instead of following commands, you follow my fingers as they trace your body. 🤲",
+            "I want to give you a hickey so big, it'll be like a badge of honor for both of us. 💋",
+            "Do you have a light? Because you light up my life.",
+            "Are you a keyboard? Because you're just my type.",
+            "If you were a song, you'd be the best hit on the chart.",
+            "Did it hurt when you fell from the vending machine? You lookin' like a snack!",
+            "Are you made of grapes? Because you're fine and I want wine."
+        ];
+
+        // Function to create blood splatter effect for dark mode
+        function createBloodSplatter() {
+            for (let i = 0; i < 5; i++) {
+                const blood = document.createElement('div');
+                blood.classList.add('blood');
+                blood.innerHTML = '💀';
+                blood.style.left = Math.random() * window.innerWidth + 'px';
+                blood.style.top = '-50px';
+                blood.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                document.body.appendChild(blood);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    blood.remove();
+                }, 1500);
+            }
+        }
+
+        // Function to create heart effect for flirty mode
+        function createHeartEffect() {
+            for (let i = 0; i < 5; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.innerHTML = '💖';
+                heart.style.left = Math.random() * window.innerWidth + 'px';
+                heart.style.bottom = '-50px';
+                heart.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                document.body.appendChild(heart);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    heart.remove();
+                }, 3000);
+            }
+        }
+
+        // Function to draw dice face based on value
+        function drawDiceFace(value) {
+            const svg = document.getElementById('dice-svg');
+            // Clear previous dots
+            while (svg.childNodes.length > 1) {
+                svg.removeChild(svg.lastChild);
+            }
+            
+            // Draw dots based on dice value
+            const dotPositions = {
+                1: [[75, 75]],
+                2: [[50, 50], [100, 100]],
+                3: [[50, 50], [75, 75], [100, 100]],
+                4: [[50, 50], [50, 100], [100, 50], [100, 100]],
+                5: [[50, 50], [50, 100], [75, 75], [100, 50], [100, 100]],
+                6: [[50, 50], [50, 75], [50, 100], [100, 50], [100, 75], [100, 100]]
+            };
+            
+            const positions = dotPositions[value];
+            for (const pos of positions) {
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", pos[0]);
+                circle.setAttribute("cy", pos[1]);
+                circle.setAttribute("r", 8);
+                circle.setAttribute("fill", "var(--primary-color)");
+                svg.appendChild(circle);
+            }
+        }
+
+        // Get random quotes based on current mode
+        function getRandomQuotes(count) {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const quotes = isDarkMode ? darkQuotes : flirtyQuotes;
+            
+            // Create a copy of the quotes array
+            const shuffled = [...quotes];
+            // Shuffle the array
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            // Return the requested number of quotes
+            return shuffled.slice(0, count);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const landingPage = document.getElementById('landing-page');
+            const mainApp = document.getElementById('main-app');
+            const nameForm = document.getElementById('name-form');
+            const nameInput = document.getElementById('name-input');
+            const userGreeting = document.getElementById('user-greeting');
+            const resetBtn = document.getElementById('reset-btn');
+            const dice = document.getElementById('dice');
+            const rollButton = document.getElementById('roll-button');
+            const resultTitle = document.getElementById('result-title');
+            const cardsContainer = document.getElementById('cards-container');
+            const modeSubtitle = document.getElementById('mode-subtitle');
+            const footerText = document.getElementById('footer-text');
+            
+            // Set initial mode text
+            updateModeText();
+            
+            // Handle theme toggle
+            themeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.remove('dark-mode');
+                    document.body.classList.add('flirty-mode');
+                } else {
+                    document.body.classList.remove('flirty-mode');
+                    document.body.classList.add('dark-mode');
+                }
+                updateModeText();
+            });
+            
+            // Update text based on current mode
+            function updateModeText() {
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                if (isDarkMode) {
+                    modeSubtitle.textContent = "Roll the dice and discover how pathetic you really are";
+                    footerText.textContent = "Warning: This game is designed to be brutally honest. Proceed with thick skin.";
+                } else {
+                    modeSubtitle.textContent = "Roll the dice and discover your romantic fate";
+                    footerText.textContent = "Get ready for some flirty fun! Who knows what fate has in store for you?";
+                }
+            }
+            
+            // Draw initial dice face (value 1)
+            drawDiceFace(1);
+            
+            // Handle name submission
+            nameForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userName = nameInput.value.trim();
+                
+                if (userName) {
+                    // Create effect based on mode
+                    const isDarkMode = document.body.classList.contains('dark-mode');
+                    if (isDarkMode) {
+                        createBloodSplatter();
+                    } else {
+                        createHeartEffect();
+                    }
+                    
+                    // Store the name
+                    localStorage.setItem('userName', userName);
+                    
+                    // Update greeting
+                    userGreeting.textContent = `Hello, ${userName}!`;
+                    
+                    // Switch to main app after a delay for effect
+                    setTimeout(() => {
+                        landingPage.style.display = 'none';
+                        mainApp.style.display = 'block';
+                    }, 800);
+                }
+            });
+            
+            // Handle reset button
+            resetBtn.addEventListener('click', function() {
+                // Create effect based on mode
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                if (isDarkMode) {
+                    createBloodSplatter();
+                } else {
+                    createHeartEffect();
+                }
+                
+                // Clear stored name
+                localStorage.removeItem('userName');
+                
+                // Switch back to landing page after a delay for effect
+                setTimeout(() => {
+                    mainApp.style.display = 'none';
+                    landingPage.style.display = 'flex';
+                    
+                    // Clear input
+                    nameInput.value = '';
+                }, 800);
+            });
+            
+            // Check if we have a stored name
+            const storedName = localStorage.getItem('userName');
+            if (storedName) {
+                userGreeting.textContent = `Hello, ${storedName}!`;
+                landingPage.style.display = 'none';
+                mainApp.style.display = 'block';
+            }
+            
+            // Roll the dice when button is clicked
+            rollButton.addEventListener('click', function() {
+                // Create effect based on mode
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                if (isDarkMode) {
+                    createBloodSplatter();
+                } else {
+                    createHeartEffect();
+                }
+                
+                // Disable button during roll
+                rollButton.disabled = true;
+                rollButton.textContent = 'Rolling...';
+                
+                // Add rolling animation
+                dice.classList.add('rolling');
+                
+                // Clear previous results
+                cardsContainer.innerHTML = '';
+                
+                // Set loading text based on mode
+                const isDark = document.body.classList.contains('dark-mode');
+                resultTitle.textContent = isDark ? 
+                    'Your miserable fate is being revealed...' : 
+                    'Your romantic fate is being revealed...';
+                
+                // Simulate dice roll with random face value
+                const faceValue = Math.floor(Math.random() * 6) + 1;
+                
+                // After animation completes, show result
+                setTimeout(() => {
+                    dice.classList.remove('rolling');
+                    drawDiceFace(faceValue);
+                    
+                    // Get random quotes
+                    const selectedQuotes = getRandomQuotes(faceValue);
+                    
+                    // Update UI with results
+                    const isDark = document.body.classList.contains('dark-mode');
+                    resultTitle.textContent = isDark ? 
+                        `You rolled a ${faceValue}! Here's your brutal truth:` : 
+                        `You rolled a ${faceValue}! Here's your romantic fate:`;
+                    
+                    // Create cards for each quote
+                    selectedQuotes.forEach((quote, index) => {
+                        setTimeout(() => {
+                            const card = document.createElement('div');
+                            card.className = 'card';
+                            card.innerHTML = `
+                                <p class="card-text">"${quote}"</p>
+                            `;
+                            cardsContainer.appendChild(card);
+                            
+                            // Add effect for each card
+                            if (index % 2 === 0) {
+                                if (isDark) {
+                                    createBloodSplatter();
+                                } else {
+                                    createHeartEffect();
+                                }
+                            }
+                        }, index * 200); // Stagger card appearance
+                    });
+                    
+                    // Re-enable button
+                    rollButton.disabled = false;
+                    rollButton.textContent = 'Roll Again';
+                }, 1000); // Match this with the CSS animation duration
+            });
+        });
+    </script>
+</body>
+</html>
